@@ -41,8 +41,14 @@ module RegfileFlat1r1w_4x4b_RTL
   // Sequential write port
 
   always_ff @( posedge clk ) begin
+
     if ( wen )
       regfile[waddr] <= wdata;
+
+    // explicit xprop
+
+    `ECE2300_SEQ_XPROP( regfile[waddr], $isunknown(wen) );
+
   end
 
   // Combinational read port

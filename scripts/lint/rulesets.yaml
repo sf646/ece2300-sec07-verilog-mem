@@ -146,4 +146,9 @@ modules:
   ProcSimpleDpath:         Struct
   RegfileZ2r1w_32x32b_RTL: RTL
   Register_RTL:            RTL
-  
+
+  Mux4_4b_RTL:                RTL
+  Decoder_2b_RTL:             RTL
+  Register_4b_RTL:            RTL
+  RegfileStruct1r1w_4x4b_RTL: Struct
+  # RegfileFlat1r1w_4x4b_RTL:   RTL
