@@ -20,26 +20,14 @@ module Mux4_4b_RTL
   //''' ACTIVITY '''''''''''''''''''''''''''''''''''''''''''''''''''''''''
   // Implement a 4-to-1 4-bit mux using an always_comb block
   //>'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-  //:
-  //: `ECE2300_UNUSED( in0 );
-  //: `ECE2300_UNUSED( in1 );
-  //: `ECE2300_UNUSED( in2 );
-  //: `ECE2300_UNUSED( in3 );
-  //: `ECE2300_UNUSED( sel );
-  //: `ECE2300_UNDRIVEN( out );
-  //:
 
-  always_comb begin
-    case ( sel )
-      0       : out = in0;
-      1       : out = in1;
-      2       : out = in2;
-      3       : out = in3;
-      default : out = 'x;
-    endcase
-  end
+  `ECE2300_UNUSED( in0 );
+  `ECE2300_UNUSED( in1 );
+  `ECE2300_UNUSED( in2 );
+  `ECE2300_UNUSED( in3 );
+  `ECE2300_UNUSED( sel );
+  `ECE2300_UNDRIVEN( out );
 
 endmodule
 
 `endif /* MUX4_4B_RTL */
-
