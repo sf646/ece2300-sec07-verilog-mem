@@ -2,15 +2,15 @@
 # configure.ac for ECE 2300
 #=========================================================================
 # Author : Christopher Batten (Cornell)
-# Date   : September 7, 2024
+# Date   : September 5, 2025
 
 #-------------------------------------------------------------------------
 # Project metadata
 #-------------------------------------------------------------------------
 
-m4_define( proj_name,         [ECE 2300 Section 7])
+m4_define( proj_name,         [ECE 2300 Labs])
 m4_define( proj_maintainer,   [Christopher Batten])
-m4_define( proj_abbreviation, [sec07-lab4-head-start])
+m4_define( proj_abbreviation, [ece2300-labs])
 m4_define( proj_version,      [v0.1])
 
 #-------------------------------------------------------------------------

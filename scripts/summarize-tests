@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+#=========================================================================
+# test-summary [options] <log-files>
+#=========================================================================
+#
+#  -h --help         Display this message
+#  -v --verbose      Verbose mode
+#  -e --exit-status  Make exit status false if any failed test cases
+#
+# Create a summary of the test results.
+#
+# Author : Christopher Batten
+# Date   : September 20, 2025
+#
+
+import argparse
+import sys
+import re
+import fnmatch
+import os
+
+#-------------------------------------------------------------------------
+# Command line processing
+#-------------------------------------------------------------------------
+
+class ArgumentParserWithCustomError(argparse.ArgumentParser):
+  def error( self, msg = "" ):
+    if ( msg ): print("\n ERROR: %s" % msg)
+    print("")
+    file = open( sys.argv[0] )
+    for ( lineno, line ) in enumerate( file ):
+      if ( line[0] != '#' ): sys.exit(msg != "")
+      if ( (lineno == 2) or (lineno >= 4) ): print( line[1:].rstrip("\n") )
+
+def parse_cmdline():
+  p = ArgumentParserWithCustomError( add_help=False )
+  p.add_argument( "-v", "--verbose",     action="store_true" )
+  p.add_argument( "-h", "--help",        action="store_true" )
+  p.add_argument( "-e", "--exit-status", action="store_true" )
+  p.add_argument( "logfiles", nargs="+" )
+  opts = p.parse_args()
+  if opts.help: p.error()
+  return opts
+
+#-------------------------------------------------------------------------
+# process_log
+#-------------------------------------------------------------------------
+
+def process_log( filename ):
+
+  passed = None
+  failed = None
+  timeout = False
+
+  with open(filename) as f:
+    for line in f:
+
+      if line.startswith("num_test_cases_passed"):
+        passed = int(re.search(r"=\s*(\d+)", line).group(1))
+
+      elif line.startswith("num_test_cases_failed"):
+        failed = int(re.search(r"=\s*(\d+)", line).group(1))
+
+      elif line.startswith("TIMEOUT"):
+        print("timeout")
+        exit()
+
+  return passed, failed, timeout
+
+#-------------------------------------------------------------------------
+# Main
+#-------------------------------------------------------------------------
+
+def main():
+  opts = parse_cmdline()
+
+  # Need to use a special zero-width space so that GitHub actions
+  # does not get rid of this blank line
+  print("\u200B")
+
+  # Verbose mode prints out the detailed results from each test bench
+
+  if opts.verbose:
+    for filename in opts.logfiles:
+
+      # strip .log from filename
+      basename = os.path.basename(filename)
+      testname, _ = os.path.splitext(basename)
+
+      print(testname)
+      print("-"*74)
+
+      if os.path.isfile(filename):
+        with open(filename) as f:
+          for line in f:
+            if line.strip() and \
+               not line.startswith("num_test_cases_passed") and \
+               not line.startswith("num_test_cases_failed") and \
+               not "finish called at" in line:
+              print(line,end="")
+
+      # Need to use a special zero-width space so that GitHub actions
+      # does not get rid of this blank line
+      print("\u200B")
+
+    print("Summary")
+    print("="*74)
+
+  # Display summary
+
+  any_failed = False
+  for filename in opts.logfiles:
+
+    # strip .log from filename
+    basename = os.path.basename(filename)
+    testname, _ = os.path.splitext(basename)
+
+    if not os.path.isfile(filename):
+      any_failed = True
+      status = f"\033[31mFAILED\033[0m"  # red
+      print(f"{testname:<40} {status} (log file not exist)")
+      continue
+
+    passed, failed, timeout = process_log(filename)
+    if passed is None or failed is None:
+      any_failed = True
+      status = f"\033[31mFAILED\033[0m"  # red
+      print(f"{testname:<40} {status} (log file invalid)")
+      continue
+
+    if failed == 0 and passed > 0:
+      status = f"\033[32mpassed\033[0m"  # green
+      print(f"{testname:<40} {status} ({passed:2}/{passed+failed:2} test cases passed)")
+    elif failed == 0 and passed == 0:
+      any_failed = True
+      status = f"\033[31mFAILED\033[0m"  # red
+      print(f"{testname:<40} {status} (no test cases)")
+    else:
+      any_failed = True
+      status = f"\033[31mFAILED\033[0m"  # red
+      print(f"{testname:<40} {status} ({passed:2}/{passed+failed:2} test cases passed)")
+
+  # Need to use a special zero-width space so that GitHub actions
+  # does not get rid of this blank line
+  print("\u200B")
+
+  # Exit with a non-zero exit status on any failures so GitHub actions
+
+  if opts.exit_status and any_failed:
+    sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+

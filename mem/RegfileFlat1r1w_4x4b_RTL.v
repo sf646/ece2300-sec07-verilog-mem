@@ -5,14 +5,11 @@
 `ifndef REGFILE_FLAT_1R1W_4X4B_RTL
 `define REGFILE_FLAT_1R1W_4X4B_RTL
 
-`include "Mux4_RTL.v"
-`include "Register_RTL.v"
-`include "Decoder_RTL.v"
+`include "ece2300/ece2300-misc.v"
 
 module RegfileFlat1r1w_4x4b_RTL
 (
   (* keep=1 *) input  logic       clk,
-  (* keep=1 *) input  logic       rst,
 
   (* keep=1 *) input  logic       wen,
   (* keep=1 *) input  logic [1:0] waddr,
@@ -32,6 +29,27 @@ module RegfileFlat1r1w_4x4b_RTL
   // Write ports are sequential and should be implemented in a single
   // always_ff block, while read ports are combinational and should be
   // implemented in a separate always_comb block.
+  //:
+  //: `ECE2300_UNUSED( clk );
+  //: `ECE2300_UNUSED( wen );
+  //: `ECE2300_UNUSED( waddr );
+  //: `ECE2300_UNUSED( wdata );
+  //: `ECE2300_UNUSED( rdata );
+  //: `ECE2300_UNDRIVEN( rdata );
+  //:
+
+  // Sequential write port
+
+  always_ff @( posedge clk ) begin
+    if ( wen )
+      regfile[waddr] <= wdata;
+  end
+
+  // Combinational read port
+
+  always_comb begin
+    rdata = regfile[raddr];
+  end
 
 endmodule
 

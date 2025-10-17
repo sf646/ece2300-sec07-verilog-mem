@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+import argparse 
+import tempfile
+import shutil
+import json
+from lint.lint_rules import Rules
+from pathlib import Path
+from lint.preprocessor import main as preprocessor_main
+from lint.linter import main as linter_main
+
+def main(args_list=None):
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', nargs='?', help='A Verilog file that you want to lint.')
+    parser.add_argument('-I', '--include_dir', action='append', default=['.'],
+                       help='Directory to search for included files. Can be specified multiple times.')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose error output.')
+    parser.add_argument('-l', '--list-rules', action='store_true', help='List all available rules and exit.')
+    parser.add_argument('-t', '--test', action='store_true', default=False, help='Run tests instead of linting a file.')
+
+    args = parser.parse_args(args_list)
+    
+    #Print the rules if requested
+    if args.list_rules:
+        for name, obj in Rules.__dict__.items():
+            if isinstance(obj, type) and obj.__module__ == Rules.__module__:
+                print(f"{obj.ID}: {obj.name} - {obj.description}")
+        sys.exit(0)
+
+    include_files = args.include_dir
+    verbose_flag = args.verbose
+    
+    if not args.file:
+        parser.error("the following arguments are required: file (unless using -l/--list-rules)")
+
+    # The primary input file
+    input_filepath = Path(args.file)
+
+    # Dictionary to hold linting results
+    file_result = {"file": input_filepath, "errors": []}
+
+    # Check if the input file exists in the provided include directories and takes the first valid path
+    actual_path = next((os.path.join(dir, input_filepath) for dir in include_files if os.path.isfile(os.path.join(dir, input_filepath))), None)
+
+    if actual_path is None or not os.path.isfile(actual_path):
+        print(f"Error: The provided path '{input_filepath}' is not a valid file. Please use the correct file path or update include directories.")
+        return
+    
+    if not (str(input_filepath).endswith(".v") or str(input_filepath).endswith(".sv")):
+        print(f"Error: The provided file '{str(input_filepath)}' is not a Verilog file (.v or .sv).")
+        return
+
+    # Files we preprocessed and their respective temporary paths
+    processed_paths = []
+    # Dictionary to hold xprop data that was recorded during preprocessing. 
+    # Key : Module, Value : Array of Signals that are the first parameter of the xprop macro
+    xprop_comb_dict = {}
+    xprop_seq_dict = {}
+
+
+    # Get file information for other scripts and create a temporary directory
+    script_directory = Path(__file__).resolve().parent
+    config_dir = script_directory / "tests" / "testrules.yaml" if args.test else script_directory / "lint/rulesets.yaml"
+    temp_dir = tempfile.mkdtemp()
+
+    # --- Preprocessor ---
+
+    try:
+        preprocessor_args = [str(actual_path), "--temp-dir", temp_dir] + \
+            sum([["-I", inc_dir] for inc_dir in include_files], [])
+        if verbose_flag:
+            preprocessor_args.append("-v")
+        if args.test:
+            preprocessor_args.append("-t")
+        (processed_paths, xprop_comb_dict, xprop_seq_dict) = preprocessor_main(preprocessor_args)
+    except SystemExit as e:
+        file_result["errors"].append(("Preprocessor", f"Preprocessor exited with code {e.code}"))
+    except Exception as e:
+        file_result["errors"].append(("Preprocessor", f"Error during preprocessor execution: {e}"))
+
+    # --- Linter ---
+    try:
+        # Using JSON to pass xprop data to the linter
+        xprop_comb_json_string = json.dumps(xprop_comb_dict)
+        xprop_seq_json_string = json.dumps(xprop_seq_dict)
+
+        if processed_paths:
+            linter_args = ["-c", str(config_dir), "-I", temp_dir, "-xc", xprop_comb_json_string, "-xs", xprop_seq_json_string] + \
+                [os.path.join(temp_dir,file) for file in processed_paths]
+            linter_main(linter_args) 
+    except subprocess.CalledProcessError as e:
+        file_result["errors"].append(("Linter", e.stderr and e.stdout))
+    except FileNotFoundError as e:
+        file_result["errors"].append(("Linter", f"Error: {e}"))
+
+    # This is most likely unnecessary as each file will exit with its own error code
+    results = []
+    if file_result["errors"]:
+        results.append(file_result)
+    
+    try:
+        shutil.rmtree(temp_dir)
+    except OSError as e:
+        print(f"Error: {e.strerror}")
+
+    if results:
+        print("\n\n--- Summary of Failures ---")
+        for result in results:
+            print(f"\n\033[1m{result['file']}:\033[0m")
+            for stage, msg in result["errors"]:
+                print(f"\033[91m[{stage} Error]\033[0m")
+                print(msg.strip())
+                print("-" * 60)
+        sys.exit(1)
+    
+if __name__ == '__main__':
+    main()

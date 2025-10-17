@@ -1,0 +1,149 @@
+rule-sets:
+  
+  GL:
+    - Struct
+    - NOMODULE
+
+  RTL:
+    - InferredLatchRules
+    - XOptimismRules
+    - AlwaysRules
+
+  Struct:
+    - NOSPBLK
+    - BADLHS
+    - BADRHS
+    - COMPLEXLHS
+    - COMPLEXRHS
+    - PRIMONLY
+  # Add a rule to check for concatenation inside the module ports
+
+  InferredLatchRules:
+    - LATCH
+    - CASEINFER
+    - ASSIGNORDER
+  
+  XOptimismRules:
+    - CASEDEFAULT
+    - XASSIGN
+    - SignalAssignInDefault
+    - XPROP
+    - WRONGXPROP
+  
+  AlwaysRules:
+    - ALWAYSSTAR
+    - BLKSEQ
+    - NONBLKCOMBI
+    - ASYNCRESET
+    - NEGEDGE
+
+modules:
+
+  #------------------------------
+  # Lab 1 Modules
+  #------------------------------
+
+  BinaryToBinCodedDec_GL:   GL
+  BinaryToSevenSegOpt_GL:   GL
+  BinaryToSevenSegUnopt_GL: GL
+  DisplayOpt_GL :           Struct
+  DisplayUnopt_GL:          Struct
+
+  #------------------------------
+  # Lab 2 Modules
+  #------------------------------
+
+  Adder_16b_RTL:           RTL
+  AdderCarrySelect_16b_GL: Struct
+  AdderRippleCarry_8b_GL:  Struct
+  AdderRippleCarry_16b_GL: Struct
+  #BinaryToBinCodedDec_GL  Repeated from Lab 1
+  BinaryToSevenSeg_GL:     GL
+  Calculator_GL:           Struct
+  CalculatorDisplay_GL:    Struct
+  Display_GL:              Struct
+  FullAdder_GL:            GL
+  Multiplier_1x16b_GL:     GL
+  Multiplier_2x16b_GL:     Struct
+  Multiplier_2x16b_RTL:    RTL
+  Mux2_1b_GL:              GL
+  Mux2_8b_GL:              Struct
+  Mux2_16b_GL:             Struct
+
+  #------------------------------
+  # Lab 3 Modules
+  #------------------------------
+
+  #AdderCarrySelect_16b_GL: Repeated from Lab 2
+  #AdderRippleCarry_8b_GL:  Repeated from Lab 2
+  #BinaryToBinCodedDec_GL:  Repeated from Lab 1
+  #BinaryToSevenSeg_GL:     Repeated from Lab 2
+  ClockDiv_RTL:             RTL
+  Counter_16b_GL:           Struct
+  Counter_16b_RTL:          RTL
+  DFF_GL:                   Struct
+  DFF_RTL:                  RTL
+  DFFR_GL:                  Struct
+  DFFR_RTL:                 RTL
+  DFFRE_GL:                 Struct
+  DFFRE_RTL:                RTL
+  #Display_GL:              Repeated from Lab 2
+  DLatch_GL:                GL
+  EqComparator_16b_GL:      GL
+  EqComparator_16b_RTL:     RTL
+  #FullAdder_GL:            Repeated from Lab 2
+  MultiNotePlayer_RTL:      Struct
+  MusicMem_RTL:             RTL
+  MusicPlayer_RTL:          Struct
+  MusicPlayerCtrl_RTL:      RTL
+  MusicPlayerDpath_RTL:     Struct
+  #Mux2_1b_GL:              Repeated from Lab 2
+  #Mux2_8b_GL:              Repeated from Lab 2
+  #Mux2_16b_GL              Reoeated from Lab 2
+  Mux2_16b_RTL:             RTL
+  Mux8_1b_RTL:              RTL
+  NotePlayer_GL:            Struct
+  NotePlayer_RTL:           Struct
+  NotePlayerCtrl_GL:        Struct
+  NotePlayerCtrl_RTL:       RTL
+  Register_16b_GL:          Struct
+  Register_16b_RTL:         RTL
+
+  #------------------------------
+  # Lab 4 Modules
+  #------------------------------
+
+  AccumXcel:               Struct
+  AccumXcelCtrl:           RTL
+  AccumXcelDpath:          Struct
+  AccumXcelMem:            RTL
+  Adder_32b_GL:            Struct
+  AdderCarrySelect_8b_GL:  Struct
+  AdderRippleCarry_4b_GL:  Struct
+  ALU_32b:                 Struct
+  #BinaryToBinCodedDec_GL: Repeated from Lab 1
+  #BinaryToSevenSeg_GL:    Repeated from Lab 2
+  Bus_RTL:                 RTL
+  #ClockDiv_RTL:           Repeated from Lab 3
+  #Counter_16b_RTL:        Repeated from Lab 3
+  #Display_GL:             Repeated from Lab 2
+  EqComparator_32b_RTL:    Struct
+  #FullAdder_GL:           Repeated from Lab 2
+  ImmGen_RTL:              RTL
+  Memory:                  RTL
+  MMU:                     RTL
+  Multiplier_32x32b_RTL:   RTL
+  #Mux2_1b_GL:             Repeated from Lab 2
+  Mux2_4b_GL:              Struct
+  Mux2_RTL:                RTL
+  Mux4_RTL:                RTL
+  Mux8_RTL:                RTL
+  ProcScycle:              Struct
+  ProcScycleCtrl:          RTL
+  ProcScycleDpath:         Struct
+  ProcSimple:              Struct
+  ProcSimpleCtrl:          RTL
+  ProcSimpleDpath:         Struct
+  RegfileZ2r1w_32x32b_RTL: RTL
+  Register_RTL:            RTL
+  

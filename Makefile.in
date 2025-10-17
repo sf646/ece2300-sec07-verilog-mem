@@ -2,24 +2,7 @@
 # Makefile for ECE 2300
 #=========================================================================
 # Author : Christopher Batten (Cornell)
-# Date   : September 7, 2024
-
-hws = \
-	Mux4_RTL.v \
-	Register_RTL.v \
-	Decoder_RTL.v \
-	RegfileStruct1r1w_4x4b_RTL.v \
-	RegfileFlat1r1w_4x4b_RTL.v \
-
-tests = \
-	Mux4_RTL-test.v \
-	Register_RTL-test.v \
-	Decoder_RTL-test.v \
-	RegfileStruct1r1w_4x4b_RTL-test.v \
-	RegfileFlat1r1w_4x4b_RTL-test.v \
-
-sims = \
-#   calculator-sim.v \
+# Date   : September 5, 2025
 
 #-------------------------------------------------------------------------
 # Basic setup
@@ -39,16 +22,17 @@ default : all
 .PHONY : default
 
 #-------------------------------------------------------------------------
+# Subprojects
+#-------------------------------------------------------------------------
+
+subprojects := ece2300 mem
+
+#-------------------------------------------------------------------------
 # Directories
 #-------------------------------------------------------------------------
 
 top_dir     := @srcdir@
 scripts_dir := $(top_dir)/scripts
-hw_dir      := $(top_dir)/hw
-test_dir    := $(top_dir)/test
-sim_dir     := $(top_dir)/sim
-
-VPATH := $(hw_dir) $(test_dir) $(sim_dir)
 
 #-------------------------------------------------------------------------
 # Programs
@@ -56,45 +40,79 @@ VPATH := $(hw_dir) $(test_dir) $(sim_dir)
 
 VMKDEPS          := $(scripts_dir)/mk-verilog-deps
 WARN2ERR         := $(scripts_dir)/warnings2errors
+SUMMARIZE_TESTS  := $(scripts_dir)/summarize-tests
 
-VERILATOR_FLAGS  := --quiet --timing -Wall -Wno-DECLFILENAME
+VERILATOR_FLAGS  := --quiet --timing -Wall \
+                      -Wno-DECLFILENAME -Wno-UNOPTFLAT -Wno-VARHIDDEN
 VERILATOR_LINT   := @VERILATOR@ --lint-only $(VERILATOR_FLAGS)
+
+ECE2300_LINT     := $(scripts_dir)/ece2300-lint
 
 IVERILOG_FLAGS   := -Wall -Winfloop -Wno-timescale -g2012
 IVERILOG_COMPILE := $(WARN2ERR) @IVERILOG@ $(IVERILOG_FLAGS)
 
 #-------------------------------------------------------------------------
+# check_part Helper Template
+#-------------------------------------------------------------------------
+
+define check_part
+$(1)_test_logs = $$(patsubst %.v, %.log, $$($(1)_tests))
+
+check-$(subst _,-,$(1)) : $$($(1)_test_logs)
+	$(scripts_dir)/summarize-tests $$($(1)_test_logs)
+
+check-$(subst _,-,$(1))-verbose : $$($(1)_test_logs)
+	$(scripts_dir)/summarize-tests --verbose $(SUMMARIZE_TESTS_FLAGS) $$($(1)_test_logs)
+
+.PHONY : check-$(subst _,-,$(1))
+
+endef
+
+#-------------------------------------------------------------------------
+# Setup Subprojects
+#-------------------------------------------------------------------------
+
+include $(foreach s,$(subprojects),$(top_dir)/$(s)/$(s).mk)
+
+srcs  := $(foreach s,$(subprojects),$($(s)_srcs))
+tests := $(foreach s,$(subprojects),$($(s)_tests))
+sims  := $(foreach s,$(subprojects),$($(s)_sims))
+
+VPATH := $(foreach s,$(subprojects),$(top_dir)/$(s))
+VPATH += $(foreach s,$(subprojects),$(top_dir)/$(s)/test)
+VPATH += $(foreach s,$(subprojects),$(top_dir)/$(s)/sim)
+
+#-------------------------------------------------------------------------
 # Tests
 #-------------------------------------------------------------------------
 
-test_deps       := $(patsubst %.v, %.d,   $(tests))
-test_exes       := $(patsubst %.v, %,     $(tests))
-test_logs_partA := $(patsubst %.v, %.log, $(tests_partA))
-test_logs       := $(patsubst %.v, %.log, $(tests))
+test_deps := $(patsubst %.v, %.d,   $(tests))
+test_exes := $(patsubst %.v, %,     $(tests))
+test_logs := $(patsubst %.v, %.log, $(tests))
 
 $(test_deps) : %.d : %.v
-	$(VMKDEPS) -I $(hw_dir) -I $(test_dir) $* $<
+	$(VMKDEPS) -I $(top_dir) $* $<
 
 $(test_exes) : % : %.v
-	$(VERILATOR_LINT) -I$(hw_dir) -I$(test_dir) --top-module Top $<
-	$(IVERILOG_COMPILE) -I $(hw_dir) -I $(test_dir) -s Top -o $@ $<
+	$(VERILATOR_LINT) -I$(top_dir) --top-module Top $<
+	$(ECE2300_LINT) -I $(top_dir) $<
+	$(IVERILOG_COMPILE) -I $(top_dir) -s Top -o $@ $<
 
 $(test_logs) : %.log : %
 	./$< > $@
 
-check-partA : $(test_logs_partA)
-	@sed -e '/^$$/N;/\n.*finish/d' $(test_logs_partA) | tee test-summary-partA.txt
-	@echo ""
-
 check : $(test_logs)
-	@sed -e '/^$$/N;/\n.*finish/d' $(test_logs) | tee test-summary.txt
-	@echo ""
+	$(SUMMARIZE_TESTS) $(SUMMARIZE_TESTS_FLAGS) $(test_logs)
+
+check-verbose : $(test_logs)
+	$(SUMMARIZE_TESTS) --verbose $(test_logs)
+
+.PHONY: check
 
 deps += $(test_deps)
 exes += $(test_exes)
 logs += $(test_logs)
 junk += $(test_deps) $(test_exes) $(test_logs)
-junk += test-summary-partA.txt test-summary.txt
 
 #-------------------------------------------------------------------------
 # Sims
@@ -104,11 +122,11 @@ sim_deps := $(patsubst %.v, %.d, $(sims))
 sim_exes := $(patsubst %.v, %,   $(sims))
 
 $(sim_deps) : %.d : %.v
-	$(VMKDEPS) -I $(hw_dir) -I $(sim_dir) $* $<
+	$(VMKDEPS) -I $(top_dir) $* $<
 
 $(sim_exes) : % : %.v
-	$(VERILATOR_LINT) -I$(hw_dir) -I$(sim_dir) --top-module Top $<
-	$(IVERILOG_COMPILE) -I $(hw_dir) -I $(sim_dir) -s Top -o $@ $<
+	$(VERILATOR_LINT) -I$(top_dir) --top-module Top $<
+	$(IVERILOG_COMPILE) -I $(top_dir) -s Top -o $@ $<
 
 deps += $(sim_deps)
 exes += $(sim_exes)
@@ -121,6 +139,7 @@ junk += $(sim_deps) $(sim_exes)
 -include $(deps)
 
 deps : $(deps)
+
 .PHONY : deps
 
 #-------------------------------------------------------------------------
