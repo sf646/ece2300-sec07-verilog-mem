@@ -45,9 +45,11 @@ module RegfileStruct1r1w_4x4b_RTL
     .out (regfile_en)
   );
 
-  // Register 0
+  // Read data for each register
 
-  logic [3:0] reg0_q;
+  logic [3:0] reg_q[4];
+
+  // Register 0
 
   wire reg0_en;
   and( reg0_en, regfile_en[0], wen );
@@ -57,12 +59,10 @@ module RegfileStruct1r1w_4x4b_RTL
     .clk (clk),
     .en  (reg0_en),
     .d   (wdata),
-    .q   (reg0_q)
+    .q   (reg_q[0])
   );
 
   // Register 1
-
-  logic [3:0] reg1_q;
 
   wire reg1_en;
   and( reg1_en, regfile_en[1], wen );
@@ -72,12 +72,10 @@ module RegfileStruct1r1w_4x4b_RTL
     .clk (clk),
     .en  (reg1_en),
     .d   (wdata),
-    .q   (reg1_q)
+    .q   (reg_q[1])
   );
 
   // Register 2
-
-  logic [3:0] reg2_q;
 
   wire reg2_en;
   and( reg2_en, regfile_en[2], wen );
@@ -87,12 +85,10 @@ module RegfileStruct1r1w_4x4b_RTL
     .clk (clk),
     .en  (reg2_en),
     .d   (wdata),
-    .q   (reg2_q)
+    .q   (reg_q[2])
   );
 
   // Register 3
-
-  logic [3:0] reg3_q;
 
   wire reg3_en;
   and( reg3_en, regfile_en[3], wen );
@@ -102,17 +98,17 @@ module RegfileStruct1r1w_4x4b_RTL
     .clk (clk),
     .en  (reg3_en),
     .d   (wdata),
-    .q   (reg3_q)
+    .q   (reg_q[3])
   );
 
   // Read mux
 
   Mux4_4b_RTL mux
   (
-    .in0 (reg0_q),
-    .in1 (reg1_q),
-    .in2 (reg2_q),
-    .in3 (reg3_q),
+    .in0 (reg_q[0]),
+    .in1 (reg_q[1]),
+    .in2 (reg_q[2]),
+    .in3 (reg_q[3]),
     .sel (raddr),
     .out (rdata)
   );
