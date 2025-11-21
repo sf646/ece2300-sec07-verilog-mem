@@ -19,19 +19,28 @@ module RegfileFlat1r1w_4x4b_RTL
   (* keep=1 *) output logic [3:0] rdata
 );
 
-  //''' ACTIVITY '''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-  // Implement a 4-word 4-bit regfile with 1 write port and 1 read port
-  //''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-  // Write ports are sequential and should be implemented in a single
-  // always_ff block, while read ports are combinational and should be
-  // implemented in a separate always_comb block.
+  logic [3:0] regfile [4];
 
-  `ECE2300_UNUSED( clk );
-  `ECE2300_UNUSED( wen );
-  `ECE2300_UNUSED( waddr );
-  `ECE2300_UNUSED( wdata );
-  `ECE2300_UNUSED( raddr );
-  `ECE2300_UNDRIVEN( rdata );
+  always_ff @( posedge clk ) begin
+    if ( wen )
+      case (waddr)
+      2'd0: regfile[0] <= wdata;
+      2'd1: regfile[1] <= wdata;
+      2'd2: regfile[2] <= wdata;
+      2'd3: regfile[3] <= wdata;
+      default: {regfile[0], regfile[1], regfile[2], regfile[3]} = 'x;
+      endcase
+  end
+
+  always_comb begin
+    case (raddr)
+    2'd0: rdata = regfile[0];
+    2'd1: rdata = regfile[1];
+    2'd2: rdata = regfile[2];
+    2'd3: rdata = regfile[3];
+    default: rdata = 'x;
+    endcase
+  end
 
 endmodule
 

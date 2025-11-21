@@ -23,16 +23,64 @@ module RegfileStruct1r1w_4x4b_RTL
   (* keep=1 *) output logic [3:0] rdata
 );
 
-  //''' LAB ASSIGNMENT '''''''''''''''''''''''''''''''''''''''''''''''''''
-  // Implement 4-element, 4-bit regfile structurally
-  //>'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  logic [3:0] decode_out;
 
-  `ECE2300_UNUSED( clk );
-  `ECE2300_UNUSED( wen );
-  `ECE2300_UNUSED( waddr );
-  `ECE2300_UNUSED( wdata );
-  `ECE2300_UNUSED( raddr );
-  `ECE2300_UNDRIVEN( rdata );
+  Decoder_2b_RTL decoder
+  (
+    .in (waddr),
+    .out (decode_out)
+  );
+
+  logic reg0en, reg1en, reg2en, reg3en;
+
+  and( reg0en, wen, decode_out[0] );
+  and( reg1en, wen, decode_out[1] );
+  and( reg2en, wen, decode_out[2] );
+  and( reg3en, wen, decode_out[3] );
+
+  logic [3:0] regout [4];
+
+  Register_4b_RTL reg0
+  (
+    .clk (clk),
+    .en (reg0en),
+    .d (wdata),
+    .q (regout[0])
+  );
+
+  Register_4b_RTL reg1
+  (
+    .clk (clk),
+    .en (reg1en),
+    .d (wdata),
+    .q (regout[1])
+  );
+
+  Register_4b_RTL reg2
+  (
+    .clk (clk),
+    .en (reg2en),
+    .d (wdata),
+    .q (regout[2])
+  );
+
+  Register_4b_RTL reg3
+  (
+    .clk (clk),
+    .en (reg3en),
+    .d (wdata),
+    .q (regout[3])
+  );
+
+  Mux4_4b_RTL mux
+  (
+    .in0 (regout[0]),
+    .in1 (regout[1]),
+    .in2 (regout[2]),
+    .in3 (regout[3]),
+    .sel (raddr),
+    .out (rdata)
+  );
 
 endmodule
 
