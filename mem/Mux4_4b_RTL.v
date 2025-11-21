@@ -25,7 +25,6 @@ module Mux4_4b_RTL
     2'd3: out = in3;
     default: out = 'x;
     endcase
-    `ECE2300_XPROP (out, $isunknown(sel));
   end
 
 endmodule

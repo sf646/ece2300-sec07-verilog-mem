@@ -21,7 +21,6 @@ module Decoder_2b_RTL
     2'd3: out = 4'b1000;
     default: out = 'x;
     endcase
-    `ECE2300_XPROP(out, $isunknown(in));
   end
 
 endmodule
